@@ -319,7 +319,7 @@ export default function ScanPage() {
             )}
           </div>
 
-          {/* Viewfinder or error message */}
+          {/* Viewfinder or error message — min-h-64 keeps it tall on narrow screens */}
           {cameraError ? (
             <div className="flex flex-col items-center justify-center gap-3 rounded-xl
               bg-slate-50 border border-slate-200 py-10 text-center">
@@ -330,7 +330,7 @@ export default function ScanPage() {
               <p className="text-xs text-slate-400">Use Upload Photo instead</p>
             </div>
           ) : (
-            <div className="relative w-full rounded-xl overflow-hidden bg-slate-900"
+            <div className="relative w-full rounded-xl overflow-hidden bg-slate-900 min-h-64"
               style={{ aspectRatio: '4/3' }}>
               {/* Video */}
               <video
@@ -373,8 +373,8 @@ export default function ScanPage() {
           {/* Hidden canvas for snapshot / offscreen drawing */}
           <canvas ref={canvasRef} className="hidden" />
 
-          {/* Buttons */}
-          <div className="flex gap-3">
+          {/* Buttons — stack vertically on mobile, side by side on sm+ */}
+          <div className="flex flex-col sm:flex-row gap-3">
             {!cameraError && (
               <button
                 onClick={capturePhoto}
