@@ -71,16 +71,24 @@ export default function Sidebar({ teacher }: { teacher: Teacher }) {
 
   return (
     <>
-      {/* Hamburger — mobile only */}
-      <button
-        onClick={() => setIsOpen(prev => !prev)}
-        aria-label={isOpen ? 'Close menu' : 'Open menu'}
-        className="fixed top-4 left-4 z-50 lg:hidden w-10 h-10 flex items-center
-          justify-center rounded-xl bg-slate-900 text-white shadow-md
-          active:scale-95 transition-transform"
-      >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+      {/* Mobile topbar — hidden on desktop */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200
+        flex items-center px-4 gap-3 z-40 lg:hidden">
+        <button
+          onClick={() => setIsOpen(prev => !prev)}
+          aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          className="w-9 h-9 flex items-center justify-center rounded-xl
+            hover:bg-slate-100 text-slate-700 transition-colors flex-shrink-0"
+        >
+          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+        <span className="flex-1 text-center text-base font-bold tracking-tight
+          text-slate-900 pointer-events-none">
+          GradeSnap<span className="text-sky-500">.</span>
+        </span>
+        {/* Spacer keeps logo visually centered */}
+        <div className="w-9 flex-shrink-0" aria-hidden="true" />
+      </header>
 
       {/* Overlay — mobile only */}
       {isOpen && (
@@ -91,9 +99,10 @@ export default function Sidebar({ teacher }: { teacher: Teacher }) {
         />
       )}
 
-      {/* Sidebar panel */}
+      {/* Sidebar panel — on mobile starts below the topbar; on desktop full height */}
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-slate-900 flex flex-col z-50
+        className={`fixed left-0 top-14 lg:top-0 h-[calc(100%-3.5rem)] lg:h-full w-64
+          bg-slate-900 flex flex-col z-50
           transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0`}

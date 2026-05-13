@@ -48,7 +48,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-slate-100">
       <Sidebar teacher={teacherProfile} />
-      <main className="lg:ml-64 flex-1 px-4 pt-16 pb-6 lg:p-6">{children}</main>
+      <main className="lg:ml-64 flex-1 px-4 pt-14 pb-6 lg:p-6">{children}</main>
     </div>
   )
 }
