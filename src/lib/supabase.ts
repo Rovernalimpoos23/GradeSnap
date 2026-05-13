@@ -48,6 +48,7 @@ export type Database = {
           has_essay: boolean
           essay_question: string | null
           essay_lines: number | null
+          created_at: string
         }
         Insert: {
           id?: string
@@ -63,6 +64,7 @@ export type Database = {
           has_essay?: boolean
           essay_question?: string | null
           essay_lines?: number | null
+          created_at?: string
         }
         Update: {
           id?: string
@@ -78,6 +80,7 @@ export type Database = {
           has_essay?: boolean
           essay_question?: string | null
           essay_lines?: number | null
+          created_at?: string
         }
         Relationships: [
           {
@@ -85,6 +88,38 @@ export type Database = {
             columns: ['teacher_id']
             isOneToOne: false
             referencedRelation: 'teachers'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      answer_keys: {
+        Row: {
+          id: string
+          exam_id: string
+          question_number: number
+          correct_answer: string | null
+          points: number
+        }
+        Insert: {
+          id?: string
+          exam_id: string
+          question_number: number
+          correct_answer?: string | null
+          points?: number
+        }
+        Update: {
+          id?: string
+          exam_id?: string
+          question_number?: number
+          correct_answer?: string | null
+          points?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'answer_keys_exam_id_fkey'
+            columns: ['exam_id']
+            isOneToOne: false
+            referencedRelation: 'exams'
             referencedColumns: ['id']
           }
         ]

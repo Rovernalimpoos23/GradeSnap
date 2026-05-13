@@ -414,4 +414,182 @@ question_results(id, grading_result_id, question_number, detected_answer,
 - No light/dark toggle — light theme only
 - No UI component libraries (no shadcn, no MUI, no Radix)
 - No over-engineering — simplest working version first
-```
+
+
+---
+
+## BUBBLE SHEET BUILDER — Sheet Page Spec
+Located at: app/dashboard/exams/[id]/sheet/page.tsx
+
+### Page Layout
+Two column layout — side by side:
+- Left: customization panel w-80 bg-white border-r border-slate-200 
+  overflow-y-auto fixed height
+- Right: live preview flex-1 bg-slate-100 overflow-auto p-8
+
+### Customization Panel Sections
+1. School Branding
+   - Logo upload → Supabase Storage "logos" bucket
+   - School name input → teachers.school_name
+   - School address input → teachers.school_address
+   - Save Profile button → updates teachers table
+
+2. Sheet Style
+   - Theme color: 8 preset swatches + custom color input
+     Presets: #3b4dff, #e63946, #2ec4b6, #e76f51,
+              #2d6a4f, #7209b7, #e63700, #1d3557
+   - Layout: Portrait / Landscape pill toggle
+   - Choices override: A-C / A-D / A-E pills
+
+3. Sheet Content toggles
+   - Show instructions box (default ON)
+   - Show registration marks (default ON)
+   - Show bubble labels A B C D (default ON)
+   - Show sample filled bubble (default ON)
+
+4. Footer
+   - Motto input
+   - Contact/website input
+   - Show "Powered by GradeSnap" toggle
+
+### Live Preview
+- Updates instantly on every input change
+- Uses React useState for all customization values
+- No page reload, no save needed for preview
+- Pre-fills from teachers table and exams table on load
+- Zoom in/out buttons (scale transform)
+- Print button → window.print()
+- Download PDF → @react-pdf/renderer
+
+### Bubble Sheet Structure (white, print-ready)
+Header:
+  - Logo img (56x56px) + school name (font-bold text-sm) 
+    + address (text-xs text-gray-500)
+  - Right side: exam title, subject, grade, quarter
+
+Accent bar:
+  - h-1.5 rounded-full using theme color, full width
+
+Info fields row:
+  - flex gap-3, each field has label + underline
+  - Fields: Student Name, LRN, Section, Date
+  - Labels use theme color, text-xs font-bold uppercase
+
+QR + Instructions row:
+  - QR code left (52x52px, generated with qrcode package)
+  - Instructions box right (yellow bg, warning text)
+
+Bubble Grid Rules:
+  - ALWAYS 10 rows per column
+  - Number of columns = Math.ceil(numItems / 10)
+  - Example: 30 items = 3 columns of 10
+  - Example: 50 items = 5 columns of 10
+  - Example: 100 items = 10 columns of 10
+  - Layout: grid grid-cols-{columns} gap-x-4 gap-y-0.5
+  - Each bubble row: flex items-center gap-0.5
+  - Question number: text-xs text-gray-400 w-4 text-right mr-1
+  - Each bubble: w-5 h-5 rounded-full border-1.5 border-gray-400
+    flex items-center justify-center text-gray-500
+    font-bold text-xs
+  - Filled sample bubble: bg-gray-900 border-gray-900 text-white
+
+Essay section (if has_essay):
+  - Purple border-l-4 question prompt box
+  - Writing lines: border-b border-gray-300 h-7 per line
+  - Word count guide if enabled
+  - Scoring rubric table if enabled
+
+Footer:
+  - border-t border-gray-200 pt-3 mt-4
+  - Left: motto in italic text-xs text-gray-500
+  - Right: contact text-xs text-gray-400
+
+Registration marks:
+  - 4 corners, absolute positioned
+  - 13x13px solid black squares, rounded-sm
+  - top-3 left-3, top-3 right-3, bottom-3 left-3, bottom-3 right-3
+
+### Print CSS
+@media print:
+  - Hide left customization panel
+  - Hide zoom/print/download buttons
+  - Sheet fills full page
+  - @page size A4, margin 0
+  - background-color: white
+  - -webkit-print-color-adjust: exact
+
+### State Variables (useState)
+- schoolName, schoolAddress, logoUrl
+- themeColor (default #3b4dff)
+- layout ('portrait' | 'landscape')
+- numChoices (3 | 4 | 5)
+- showInstructions, showRegMarks, showLabels, showSample
+- footerMotto, footerContact, showPowered
+- zoom (default 100, step 10, min 50 max 150)
+
+---
+
+## SCANNING ARCHITECTURE — Browser-Based OMR
+
+### Stack
+- OpenCV.js (@techstark/opencv-js) — bubble detection
+- Tesseract.js — OCR for student name/LRN fields  
+- Browser Camera API (getUserMedia) — camera capture
+- Web Workers — background processing (never block UI)
+- jsQR — QR code decoding
+
+### Install packages
+npm install @techstark/opencv-js tesseract.js jsqr
+
+### Scan page location
+app/dashboard/scan/page.tsx
+
+### Processing flow
+1. Teacher captures photo or uploads image
+2. Pass image to Web Worker
+3. Web Worker loads OpenCV.js
+4. Preprocess: grayscale → Gaussian blur → 
+   adaptive threshold → find contours
+5. Detect 3 registration marks → correct perspective warp
+6. Decode QR code with jsQR → get exam_id
+7. Load answer key from Supabase using exam_id
+8. For each bubble row: sample pixel darkness
+   if mean darkness < 80 → mark as filled
+   if multiple filled → flag for review
+   if none filled → flag for review
+9. Tesseract.js reads student name field (optional)
+10. Calculate score vs answer key
+11. Save to grading_results + question_results tables
+12. Update scan_submissions status to 'done'
+
+### Bubble Detection Logic
+- Sheet is divided into known grid based on registration marks
+- Each bubble cell is a fixed-size circle region
+- Sample average pixel value in center of each bubble
+- Threshold: pixel mean < 80 = filled (0=black, 255=white)
+- Ambiguous range 80-120: flag for manual review
+- Send ambiguous cases to Groq API for AI fallback
+
+### Camera UI
+- Full width video preview with overlay guide rectangle
+- Corner markers showing where to align the sheet
+- "Capture" button takes snapshot from video stream
+- "Upload Photo" button for gallery/file upload
+- Both paths feed into same Web Worker pipeline
+
+### Web Worker file
+public/workers/scan.worker.js
+- Loads OpenCV.js inside worker
+- Receives ImageData from main thread
+- Returns: { answers, studentName, examId, flagged, confidence }
+
+### Offline Support
+- OpenCV.js cached after first load
+- Answer keys cached in localStorage by exam_id
+- Results queued in IndexedDB if no internet
+- Auto-sync to Supabase when connection restored
+
+### Never block the main thread
+- All OpenCV operations in Web Worker
+- Show progress bar while processing
+- UI stays responsive during scan
