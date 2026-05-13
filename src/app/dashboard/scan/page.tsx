@@ -274,6 +274,13 @@ export default function ScanPage() {
         .animate-scanline {
           animation: scanline 2s linear infinite;
         }
+        @keyframes capture-ring {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0.45); }
+          50%       { box-shadow: 0 0 0 10px rgba(14,165,233,0); }
+        }
+        .animate-capture-ring {
+          animation: capture-ring 2s ease-in-out infinite;
+        }
       `}</style>
 
       {/* Page header */}
@@ -319,10 +326,10 @@ export default function ScanPage() {
             )}
           </div>
 
-          {/* Viewfinder or error message — min-h-64 keeps it tall on narrow screens */}
+          {/* Viewfinder or error message */}
           {cameraError ? (
             <div className="flex flex-col items-center justify-center gap-3 rounded-xl
-              bg-slate-50 border border-slate-200 py-10 text-center">
+              bg-slate-50 border border-slate-200 min-h-96 lg:min-h-[500px] text-center">
               <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
                 <Camera className="w-6 h-6 text-slate-400" />
               </div>
@@ -330,71 +337,81 @@ export default function ScanPage() {
               <p className="text-xs text-slate-400">Use Upload Photo instead</p>
             </div>
           ) : (
-            <div className="relative w-full rounded-xl overflow-hidden bg-slate-900 min-h-64"
-              style={{ aspectRatio: '4/3' }}>
+            <div className="relative w-full rounded-xl overflow-hidden bg-slate-900
+              min-h-96 lg:min-h-[500px]" style={{ aspectRatio: '3/4' }}>
               {/* Video */}
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover"
                 muted
                 playsInline
               />
 
-              {/* Dark overlay with a cutout effect using a border-based guide rect */}
+              {/* Overlay + guide */}
               {cameraActive && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="absolute inset-0 bg-black/40" />
 
-                  {/* Guide rectangle */}
-                  <div className="relative z-10 w-3/4 h-[85%]">
-                    <div className="absolute inset-0 border-2 border-white/70 rounded-sm" />
+                  {/* Guide rectangle — 80% wide, 70% tall */}
+                  <div className="relative z-10 w-4/5 h-[70%]">
+                    <div className="absolute inset-0 border border-white/50 rounded-sm" />
 
-                    {/* Corner markers */}
-                    <span className="absolute -top-0.5 -left-0.5 w-5 h-5 border-t-[3px] border-l-[3px] border-white rounded-tl-sm" />
-                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 border-t-[3px] border-r-[3px] border-white rounded-tr-sm" />
-                    <span className="absolute -bottom-0.5 -left-0.5 w-5 h-5 border-b-[3px] border-l-[3px] border-white rounded-bl-sm" />
-                    <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 border-b-[3px] border-r-[3px] border-white rounded-br-sm" />
+                    {/* Corner markers — 24 px */}
+                    <span className="absolute -top-0.5 -left-0.5 w-6 h-6 border-t-[3px] border-l-[3px] border-white rounded-tl-sm" />
+                    <span className="absolute -top-0.5 -right-0.5 w-6 h-6 border-t-[3px] border-r-[3px] border-white rounded-tr-sm" />
+                    <span className="absolute -bottom-0.5 -left-0.5 w-6 h-6 border-b-[3px] border-l-[3px] border-white rounded-bl-sm" />
+                    <span className="absolute -bottom-0.5 -right-0.5 w-6 h-6 border-b-[3px] border-r-[3px] border-white rounded-br-sm" />
 
-                    {/* Scan line */}
+                    {/* Scan line — 2 px, bright blue */}
                     <div className="absolute inset-x-0 animate-scanline pointer-events-none">
-                      <div className="h-0.5 bg-sky-400/80 shadow-[0_0_8px_2px_rgba(56,189,248,0.6)]" />
+                      <div className="h-[2px] bg-sky-400 shadow-[0_0_12px_4px_rgba(56,189,248,0.8)]" />
                     </div>
                   </div>
                 </div>
               )}
 
-              <p className="absolute bottom-3 left-0 right-0 text-center text-xs
-                font-medium text-white/80 z-20">
-                Align sheet within the frame
-              </p>
+              {/* Label pill */}
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center z-20
+                pointer-events-none">
+                <span className="bg-black/60 text-white text-sm font-semibold
+                  px-4 py-1.5 rounded-full backdrop-blur-sm">
+                  Align sheet within the frame
+                </span>
+              </div>
             </div>
           )}
+
+          {/* Tip */}
+          <p className="text-xs text-slate-500 text-center leading-relaxed">
+            💡 Tip: Place sheet flat on a desk with good lighting for best results
+          </p>
 
           {/* Hidden canvas for snapshot / offscreen drawing */}
           <canvas ref={canvasRef} className="hidden" />
 
-          {/* Buttons — stack vertically on mobile, side by side on sm+ */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Buttons — always stacked, full width */}
+          <div className="flex flex-col gap-3">
             {!cameraError && (
               <button
                 onClick={capturePhoto}
                 disabled={!cameraActive}
-                className="flex-1 min-h-12 bg-sky-500 hover:bg-sky-600 disabled:opacity-40
-                  disabled:cursor-not-allowed text-white font-semibold text-sm px-4 py-2.5
-                  rounded-xl transition-colors duration-150 flex items-center justify-center gap-2"
+                className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-40
+                  disabled:cursor-not-allowed text-white font-bold text-base px-4 py-4
+                  rounded-xl transition-colors duration-150 flex items-center justify-center gap-2
+                  animate-capture-ring"
               >
-                <Camera className="w-4 h-4" />
-                Capture
+                <Camera className="w-5 h-5" />
+                Capture Photo
               </button>
             )}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex-1 min-h-12 bg-white hover:bg-slate-50 text-slate-700 font-semibold
-                text-sm px-4 py-2.5 rounded-xl border border-slate-200 transition-colors
+              className="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold
+                text-sm px-4 py-3 rounded-xl border border-slate-200 transition-colors
                 duration-150 flex items-center justify-center gap-2"
             >
               <Upload className="w-4 h-4" />
-              Upload Photo
+              Upload from Gallery
             </button>
             <input
               ref={fileInputRef}
